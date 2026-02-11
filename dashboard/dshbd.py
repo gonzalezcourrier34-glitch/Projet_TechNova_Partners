@@ -11,16 +11,15 @@ load_dotenv(find_dotenv())
 
 st.set_page_config(page_title="TechNova Dashboard", layout="centered")
 
-# ===== IMPORTANT (HF single-container + nginx) =====
-# - En prod HF (1 conteneur), l’API est routée via Nginx sous /api
-# - Donc, par défaut, on appelle la même origin + "/api/..."
-# - En local, tu peux surcharger via API_BASE=http://127.0.0.1:7860 (si nginx) ou API_BASE=http://127.0.0.1:8000 (si uvicorn direct)
-API_BASE = os.getenv("API_BASE", "")  # ex: "http://127.0.0.1:8000" en local, sinon "" sur HF
+API_BASE = os.getenv("API_BASE", "").rstrip("/")  # "" sur HF, "http://127.0.0.1:8000" en local
 
-API_PREDICT_BY_ID = f"{API_BASE}/api/predict/by-id"
-API_PREDICT_DEBUG = f"{API_BASE}/api/predict/debug"
-API_LATEST = f"{API_BASE}/api/predictions/latest"
-API_ROOT = f"{API_BASE}/api/"
+# Si API_BASE est vide => on passe par nginx => /api/...
+API_PREFIX = "/api" if API_BASE == "" else ""
+
+API_PREDICT_BY_ID = f"{API_BASE}{API_PREFIX}/predict/by-id"
+API_PREDICT_DEBUG = f"{API_BASE}{API_PREFIX}/predict/debug"
+API_LATEST = f"{API_BASE}{API_PREFIX}/predictions/latest"
+API_ROOT = f"{API_BASE}{API_PREFIX}/"
 
 # API key (le dashboard est un client HTTP, il envoie seulement le header)
 API_KEY = os.getenv("API_KEY")
