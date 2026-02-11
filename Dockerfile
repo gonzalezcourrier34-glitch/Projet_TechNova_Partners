@@ -6,6 +6,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Nginx + Supervisor
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx supervisor \
+ && rm -rf /var/lib/apt/lists/*
+
+# Poetry
 RUN pip install --no-cache-dir poetry==2.0.0
 
 COPY pyproject.toml poetry.lock* README.md /app/
@@ -15,6 +21,12 @@ RUN poetry config virtualenvs.create false \
 
 COPY . /app
 
+# Configs + start script
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 EXPOSE 7860
 
-CMD ["poetry", "run", "uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["/app/start.sh"]

@@ -1,28 +1,33 @@
 import os
-import streamlit as st
-import requests
 from typing import Any, Dict, List, Tuple
 
-# charge .env quand le dashboard est lancé via VS Code / bouton
-from dotenv import load_dotenv, find_dotenv
+import requests
+import streamlit as st
+
+# charge .env quand le dashboard est lancé via VS Code / bouton (local)
+from dotenv import find_dotenv, load_dotenv
+
 load_dotenv(find_dotenv())
 
 st.set_page_config(page_title="TechNova Dashboard", layout="centered")
 
-# Ce script Streamlit affiche un dashboard simple pour interagir avec l'API FastAPI et visualiser les prédictions.
-API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000")
-API_PREDICT_BY_ID = f"{API_BASE}/predict/by-id"
-API_PREDICT_DEBUG = f"{API_BASE}/predict/debug"
-API_LATEST = f"{API_BASE}/predictions/latest"
-API_ROOT = f"{API_BASE}/"
+# ===== IMPORTANT (HF single-container + nginx) =====
+# - En prod HF (1 conteneur), l’API est routée via Nginx sous /api
+# - Donc, par défaut, on appelle la même origin + "/api/..."
+# - En local, tu peux surcharger via API_BASE=http://127.0.0.1:7860 (si nginx) ou API_BASE=http://127.0.0.1:8000 (si uvicorn direct)
+API_BASE = os.getenv("API_BASE", "")  # ex: "http://127.0.0.1:8000" en local, sinon "" sur HF
+
+API_PREDICT_BY_ID = f"{API_BASE}/api/predict/by-id"
+API_PREDICT_DEBUG = f"{API_BASE}/api/predict/debug"
+API_LATEST = f"{API_BASE}/api/predictions/latest"
+API_ROOT = f"{API_BASE}/api/"
 
 # API key (le dashboard est un client HTTP, il envoie seulement le header)
 API_KEY = os.getenv("API_KEY")
 DEFAULT_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 
-# La fonction safe_request encapsule les appels à l'API avec une gestion d'erreur simple,
-# affichant un message d'erreur dans le dashboard en cas de problème de connexion ou de timeout.
 from dashboard.feature_schema import FEATURES
+
 
 def safe_request(method: str, url: str, **kwargs):
     try:
@@ -36,14 +41,13 @@ def safe_request(method: str, url: str, **kwargs):
             url,
             timeout=10,
             headers=merged_headers,
-            **kwargs
+            **kwargs,
         )
     except requests.RequestException as e:
         st.error(f"Impossible de joindre l'API : {e}")
         return None
 
-# La fonction validate_inputs vérifie que les valeurs saisies par l'utilisateur respectent les contraintes définies dans FEATURES,
-# telles que les types de données, les plages de valeurs, et les choix pour les variables catégorielles.
+
 def validate_inputs(values: Dict[str, Any]) -> Tuple[bool, List[str]]:
     errors: List[str] = []
 
@@ -52,6 +56,7 @@ def validate_inputs(values: Dict[str, Any]) -> Tuple[bool, List[str]]:
         if f.required and (v is None or (isinstance(v, str) and v.strip() == "")):
             errors.append(f"{f.label} est requis.")
             continue
+
         if f.dtype in ("int", "float"):
             if not isinstance(v, (int, float)) or isinstance(v, bool):
                 errors.append(f"{f.label} doit être un nombre.")
@@ -73,14 +78,13 @@ def validate_inputs(values: Dict[str, Any]) -> Tuple[bool, List[str]]:
 
     return (len(errors) == 0), errors
 
-# Le reste du code Streamlit affiche le dashboard avec deux onglets : un pour faire des prédictions,
-# et un pour visualiser l'historique des prédictions enregistrées dans la base de données via l'API.
+
 st.title("TechNova – Dashboard")
 st.caption("Interface Streamlit connectée à une API FastAPI et une base")
 
-# Cadre gestion de l'API
 with st.expander("Configuration API", expanded=False):
-    st.write(f"API utilisée : {API_BASE}")
+    st.write(f"API utilisée : {API_BASE if API_BASE else '(même domaine HF)'}")
+    st.write(f"API_ROOT : {API_ROOT}")
     st.write(f"API_KEY chargée : {'oui' if API_KEY else 'non'}")
 
     c1, c2 = st.columns(2)
@@ -106,15 +110,12 @@ tab_predict, tab_history = st.tabs(["Prédire", "Historique"])
 # ONGLET PRÉDICTION
 with tab_predict:
     st.subheader("Prédiction")
-    # 2 modes de validation : par ID employé (recommandé) ou par features (debug)
     mode = st.radio(
         "Mode",
         ["Par ID employé (prod, clean)", "Par features (debug)"],
         horizontal=True,
     )
 
-    # En mode ID, l'utilisateur saisit un employee_external_id,
-    # et l'API lit les features correspondantes dans clean.ml_features_employees pour faire la prédiction.
     if mode == "Par ID employé (prod, clean)":
         st.caption("L’API lit les features dans clean.ml_features_employees via employee_external_id.")
 
@@ -140,11 +141,8 @@ with tab_predict:
                     st.write(response.text)
 
     else:
-        # En mode features, l'utilisateur remplit un formulaire avec toutes les features nécessaires à la prédiction,
         st.caption("Mode debug: envoi d’un payload complet de features à l’API.")
 
-        # 2 options d'affichage permettent de choisir entre un affichage compact (6 champs par ligne)
-        # et un affichage avec les noms techniques des features (keys).
         col1, col2 = st.columns(2)
         with col1:
             compact = st.checkbox("Affichage compact", value=True)
@@ -164,7 +162,7 @@ with tab_predict:
                     max_value=int(f.max) if f.max is not None else None,
                     value=default,
                     step=1,
-                    key=f"feat_{f.key}"
+                    key=f"feat_{f.key}",
                 )
                 values_by_key[f.key] = int(v)
 
@@ -176,7 +174,7 @@ with tab_predict:
                     max_value=float(f.max) if f.max is not None else None,
                     value=default,
                     step=0.1,
-                    key=f"feat_{f.key}"
+                    key=f"feat_{f.key}",
                 )
                 values_by_key[f.key] = float(v)
 
@@ -196,7 +194,6 @@ with tab_predict:
             if st.button("Réinitialiser"):
                 st.rerun()
 
-        # Lors du lancement de la prédiction, les valeurs saisies sont d'abord validées via la fonction validate_inputs,
         if run_pred:
             ok, errors = validate_inputs(values_by_key)
             if not ok:
@@ -205,7 +202,6 @@ with tab_predict:
                     st.write(e)
                 st.stop()
 
-            # puis envoyées à l'API via la fonction safe_request, et les résultats sont affichés dans le dashboard.
             response = safe_request("POST", API_PREDICT_DEBUG, json=values_by_key)
             if response is None:
                 st.stop()
@@ -228,8 +224,6 @@ with tab_history:
     limit = st.slider("Nombre de lignes", 5, 200, 20)
 
     if st.button("Rafraîchir"):
-        # L'onglet historique affiche les dernières prédictions enregistrées dans la base de données via l'API,
-        # avec un slider pour choisir le nombre de lignes à afficher.
         response = safe_request("GET", API_LATEST, params={"limit": limit})
         if response and response.ok:
             rows = response.json()
