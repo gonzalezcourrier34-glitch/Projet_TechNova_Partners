@@ -11,17 +11,16 @@ load_dotenv(find_dotenv())
 
 st.set_page_config(page_title="TechNova Dashboard", layout="centered")
 
-HF_SPACE = os.getenv("SPACE_ID") is not None
+API_BASE = os.getenv("API_BASE", "").rstrip("/")
 
-if HF_SPACE:
-    # pour Hugging Face
-    host = os.getenv("HOSTNAME", "")
-    API_BASE = f"https://{host}"
+# En conteneur HF: nginx écoute sur 7860
+# En local: si tu n'as pas nginx, mets API_BASE=http://127.0.0.1:8000 dans ton .env
+if not API_BASE:
+    API_BASE = "http://127.0.0.1:7860"
+    API_PREFIX = "/api"
 else:
-    # en local
-    API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000")
-
-API_PREFIX = "/api"
+    # si tu pointes sur 8000 en local, pas de /api
+    API_PREFIX = "" if API_BASE.endswith(":8000") else "/api"
 
 API_PREDICT_BY_ID = f"{API_BASE}{API_PREFIX}/predict/by-id"
 API_PREDICT_DEBUG = f"{API_BASE}{API_PREFIX}/predict/debug"
@@ -32,8 +31,7 @@ API_ROOT = f"{API_BASE}{API_PREFIX}/"
 API_KEY = os.getenv("API_KEY")
 DEFAULT_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 
-from feature_schema import FEATURES
-
+from dashboard.feature_schema import FEATURES
 
 def safe_request(method: str, url: str, **kwargs):
     try:
