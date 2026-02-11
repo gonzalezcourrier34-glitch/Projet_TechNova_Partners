@@ -25,7 +25,7 @@ API_ROOT = f"{API_BASE}{API_PREFIX}/"
 API_KEY = os.getenv("API_KEY")
 DEFAULT_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 
-from dashboard.feature_schema import FEATURES
+from feature_schema import FEATURES
 
 
 def safe_request(method: str, url: str, **kwargs):
