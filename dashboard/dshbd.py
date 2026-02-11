@@ -11,10 +11,17 @@ load_dotenv(find_dotenv())
 
 st.set_page_config(page_title="TechNova Dashboard", layout="centered")
 
-API_BASE = os.getenv("API_BASE", "").rstrip("/")  # "" sur HF, "http://127.0.0.1:8000" en local
+HF_SPACE = os.getenv("SPACE_ID") is not None
 
-# Si API_BASE est vide => on passe par nginx => /api/...
-API_PREFIX = "/api" if API_BASE == "" else ""
+if HF_SPACE:
+    # pour Hugging Face
+    host = os.getenv("HOSTNAME", "")
+    API_BASE = f"https://{host}"
+else:
+    # en local
+    API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000")
+
+API_PREFIX = "/api"
 
 API_PREDICT_BY_ID = f"{API_BASE}{API_PREFIX}/predict/by-id"
 API_PREDICT_DEBUG = f"{API_BASE}{API_PREFIX}/predict/debug"
