@@ -1,0 +1,25 @@
+# --- VARIABLES D’ENVIRONNEMENT ---
+*.env
+*.venv
+
+# --- DONNÉES LOURDES / NON CODE ---
+*.zip
+*.pptx
+
+# Fichiers personnels
+/perso/
+/my-postgres/
+
+# livrables formation
+/livrables/
+
+# --- DOSSIERS DE DONNÉES ---
+/data/
+*.csv
+
+__pycache__/
+.ipynb_checkpoints/
+
+artifacts/*.joblib
+artifacts/*.pkl
+artifacts/*.bin

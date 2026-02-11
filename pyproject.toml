@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "technova"
+version = "0.1.0"
+description = "API et dashboard de prédiction du turnover – TechNova Partners"
+authors = ["Stephane GONZALEZ <gonzalezcourrier34@gmail.com>"]
+readme = "README.md"
+packages = [
+    { include = "app" },
+    { include = "service" },
+    { include = "domain" },
+    { include = "dashboard" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+
+# --- API ---
+fastapi = "^0.128.0"
+uvicorn = "^0.40.0"
+pydantic = "^2.12"
+python-dotenv = "^1.2.1"
+requests = "^2.32"
+
+# --- Database ---
+sqlalchemy = "^2.0.46"
+psycopg = { version = "^3.3.2", extras = ["binary"] }
+
+# --- ML ---
+numpy = "^2.3"
+pandas = "^2.3.3"
+scikit-learn = "^1.8.0"
+xgboost = "^3.1.2"
+imbalanced-learn = "^0.14.1"
+joblib = "^1.5"
+shap = "^0.50.0"
+
+# --- Dashboard ---
+streamlit = "^1.53.1"
+altair = "^6.0.0"
+huggingface-hub = "^1.4.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.2"
+pytest-cov = "^7.0.0"
+httpx = "^0.28.1"
+
+ipykernel = "^7.1.0"
+ipywidgets = "^8.1.8"
+matplotlib = "^3.10.8"
+seaborn = "^0.13.2"
+
+[tool.poetry.scripts]
+technova = "app.main:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+markers = ["security: tests related to API security (API key, auth)"]

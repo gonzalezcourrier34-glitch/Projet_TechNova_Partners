@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: TechNovaPartners
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: steph
+      POSTGRES_PASSWORD: 151176
+      POSTGRES_DB: TechNovaPartners
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+
+#instruction : docker compose -f my-postgres/docker-compose.yml up -d
+#docker ps
+# si pas -v garde les données même après l'arrêt du conteneur
+#instruction : docker-compose -f my-postgres/docker-compose.yml down

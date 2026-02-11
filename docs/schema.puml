@@ -1,0 +1,161 @@
+@startuml
+hide circle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+' =========================
+' TABLES RAW
+' =========================
+
+class raw_employees {
+  + id : SERIAL <<PK>>
+  --
+  employee_external_id : INTEGER <<UNIQUE, NOT NULL>>
+  age : INTEGER
+  genre : VARCHAR(20)
+  statut_marital : VARCHAR(50)
+  ayant_enfants : VARCHAR(10)
+  niveau_education : INTEGER
+  domaine_etude : VARCHAR(120)
+  departement : VARCHAR(120)
+  poste : VARCHAR(120)
+  distance_domicile_travail : INTEGER
+  created_at : TIMESTAMPTZ <<NOT NULL, default now()>>
+}
+
+class raw_employee_snapshots {
+  + id : SERIAL <<PK>>
+  --
+  employee_id : INTEGER <<FK, NOT NULL>>
+  nombre_experiences_precedentes : INTEGER
+  nombre_heures_travaillees : INTEGER
+  annee_experience_totale : INTEGER
+  annees_dans_l_entreprise : INTEGER
+  annees_dans_le_poste_actuel : INTEGER
+  annees_sous_responsable_actuel : INTEGER
+  niveau_hierarchique_poste : INTEGER
+  revenu_mensuel : INTEGER
+  augmentation_salaire_precedente : VARCHAR(50)
+  heures_supplementaires : VARCHAR(50)
+  nombre_participation_pee : INTEGER
+  nb_formations_suivies : INTEGER
+  nombre_employee_sous_responsabilite : INTEGER
+  frequence_deplacement : VARCHAR(50)
+  annees_depuis_la_derniere_promotion : INTEGER
+  created_at : TIMESTAMPTZ <<NOT NULL, default now()>>
+}
+
+class raw_surveys {
+  + id : SERIAL <<PK>>
+  --
+  employee_id : INTEGER <<FK, NOT NULL>>
+  code_sondage : INTEGER
+  eval_number : VARCHAR(50)
+  note_evaluation_precedente : INTEGER
+  note_evaluation_actuelle : INTEGER
+  satisfaction_employee_environnement : INTEGER
+  satisfaction_employee_nature_travail : INTEGER
+  satisfaction_employee_equipe : INTEGER
+  satisfaction_employee_equilibre_pro_perso : INTEGER
+  created_at : TIMESTAMPTZ <<NOT NULL, default now()>>
+}
+
+class ground_truth {
+  + id : SERIAL <<PK>>
+  --
+  employee_id : INTEGER <<FK, NOT NULL>>
+  date_event : TIMESTAMPTZ <<NOT NULL, default now()>>
+  a_quitte_l_entreprise : INTEGER <<NOT NULL>>
+  created_at : TIMESTAMPTZ <<NOT NULL, default now()>>
+}
+
+raw_employee_snapshots }o--|| raw_employees : employee_id → raw_employees.id\n(on delete cascade)
+raw_surveys }o--|| raw_employees : employee_id → raw_employees.id\n(on delete cascade)
+ground_truth }o--|| raw_employees : employee_id → raw_employees.id\n(on delete cascade)
+
+' =========================
+' TABLE CONTRACTUELLE ML
+' =========================
+
+class ml_features_employees {
+  + id : BIGSERIAL <<PK>>
+  created_at : TIMESTAMPTZ <<NOT NULL, default now()>>
+  --
+  note_evaluation_precedente : SMALLINT <<NOT NULL>>
+  niveau_hierarchique_poste : SMALLINT <<NOT NULL>>
+  note_evaluation_actuelle : SMALLINT <<NOT NULL>>
+
+  heures_supplementaires : SMALLINT <<NOT NULL, CHECK 0/1>>
+  augmentation_salaire_precedente : NUMERIC(10,2) <<NOT NULL>>
+
+  age : SMALLINT <<NOT NULL>>
+  genre : SMALLINT <<NOT NULL>>
+
+  revenu_mensuel : INTEGER <<NOT NULL>>
+  statut_marital : VARCHAR(50) <<NOT NULL>>
+  departement : VARCHAR(120) <<NOT NULL>>
+  poste : VARCHAR(120) <<NOT NULL>>
+
+  nombre_experiences_precedentes : SMALLINT <<NOT NULL>>
+  annee_experience_totale : SMALLINT <<NOT NULL>>
+  annees_dans_l_entreprise : SMALLINT <<NOT NULL>>
+  annees_dans_le_poste_actuel : SMALLINT <<NOT NULL>>
+
+  a_quitte_l_entreprise : SMALLINT <<NOT NULL>>
+
+  nombre_participation_pee : SMALLINT <<NOT NULL>>
+  nb_formations_suivies : SMALLINT <<NOT NULL>>
+  distance_domicile_travail : SMALLINT <<NOT NULL>>
+
+  niveau_education : SMALLINT <<NOT NULL>>
+  domaine_etude : VARCHAR(120) <<NOT NULL>>
+  frequence_deplacement : SMALLINT <<NOT NULL>>
+
+  annees_depuis_la_derniere_promotion : SMALLINT <<NOT NULL>>
+  annees_sous_responsable_actuel : SMALLINT <<NOT NULL>>
+
+  satisfaction_moyenne : NUMERIC(10,4) <<NOT NULL>>
+  nonlineaire_participation_pee : NUMERIC(18,16) <<NOT NULL>>
+  ratio_heures_sup_salaire : NUMERIC(18,16) <<NOT NULL>>
+  nonlinaire_charge_contrainte : NUMERIC(18,16) <<NOT NULL>>
+  nonlinaire_surmenage_insatisfaction : NUMERIC(18,16) <<NOT NULL>>
+
+  jeune_surcharge : SMALLINT <<NOT NULL>>
+  anciennete_sans_promotion : NUMERIC(18,16) <<NOT NULL>>
+  mobilite_carriere : NUMERIC(18,16) <<NOT NULL>>
+  risque_global : NUMERIC(18,16) <<NOT NULL>>
+}
+
+' =========================
+' HISTORIQUE DES PREDICTIONS
+' =========================
+
+class prediction_requests {
+  + id : SERIAL <<PK>>
+  --
+  employee_id : INTEGER <<FK, NULL>>
+  snapshot_id : INTEGER <<FK, NULL>>
+  survey_id : INTEGER <<FK, NULL>>
+  payload_json : JSONB <<NOT NULL>>
+  created_at : TIMESTAMPTZ <<NOT NULL, default now()>>
+}
+
+class predictions {
+  + id : SERIAL <<PK>>
+  --
+  request_id : INTEGER <<FK, NOT NULL>>
+  model_version : VARCHAR(50) <<NOT NULL>>
+  predicted_class : INTEGER <<NOT NULL>>
+  predicted_proba : DOUBLE PRECISION <<NOT NULL>>
+  threshold_used : DOUBLE PRECISION <<NOT NULL>>
+  latency_ms : INTEGER
+  created_at : TIMESTAMPTZ <<NOT NULL, default now()>>
+}
+
+predictions }o--|| prediction_requests : request_id → prediction_requests.id\n(on delete cascade)
+
+prediction_requests }o--o| raw_employees : employee_id → raw_employees.id\n(on delete set null)
+prediction_requests }o--o| raw_employee_snapshots : snapshot_id → raw_employee_snapshots.id\n(on delete set null)
+prediction_requests }o--o| raw_surveys : survey_id → raw_surveys.id\n(on delete set null)
+
+@enduml

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+
+# Tests & notebooks
+tests/
+notebooks/
+
+# Git & CI
+.git/
+.github/
+
+# Local env
+.env
+.env.*
+
+# Poetry / venv
+.venv/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker / compose inutiles en prod
+docker-compose.yml
