@@ -11,21 +11,13 @@ load_dotenv(find_dotenv())
 
 st.set_page_config(page_title="TechNova Dashboard", layout="centered")
 
-API_BASE = os.getenv("API_BASE", "").rstrip("/")
+API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000").rstrip("/")
 
-# En conteneur HF: nginx écoute sur 7860
-# En local: si tu n'as pas nginx, mets API_BASE=http://127.0.0.1:8000 dans ton .env
-if not API_BASE:
-    API_BASE = "http://127.0.0.1:7860"
-    API_PREFIX = "/api"
-else:
-    # si tu pointes sur 8000 en local, pas de /api
-    API_PREFIX = "" if API_BASE.endswith(":8000") else "/api"
+API_PREDICT_BY_ID = f"{API_BASE}/predict/by-id"
+API_PREDICT_DEBUG = f"{API_BASE}/predict/debug"
+API_LATEST = f"{API_BASE}/predictions/latest"
+API_ROOT = f"{API_BASE}/"
 
-API_PREDICT_BY_ID = f"{API_BASE}{API_PREFIX}/predict/by-id"
-API_PREDICT_DEBUG = f"{API_BASE}{API_PREFIX}/predict/debug"
-API_LATEST = f"{API_BASE}{API_PREFIX}/predictions/latest"
-API_ROOT = f"{API_BASE}{API_PREFIX}/"
 
 # API key (le dashboard est un client HTTP, il envoie seulement le header)
 API_KEY = os.getenv("API_KEY")

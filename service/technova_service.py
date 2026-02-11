@@ -18,11 +18,6 @@ MODEL_FILE = os.getenv("MODEL_FILE", "modele_classification_technova.joblib")
 THRESH_FILE = os.getenv("THRESH_FILE", "threshold.json")
 
 def _get_artifact_path(artifacts_dir: Path, filename: str) -> str:
-    """
-    1) Try local artifacts/ (dev)
-    2) Fallback to Hugging Face Hub (prod / Space)
-    Returns a filesystem path as string.
-    """
     local_path = artifacts_dir / filename
     if local_path.exists():
         return str(local_path)
@@ -125,7 +120,6 @@ class TechNovaService:
             will_leave=proba >= self.threshold,
         )
 
-    # ---------- Payload ----------
     def adapt_input(self, request: ModelRequest) -> pd.DataFrame:
         data = request.model_dump()
         X = pd.DataFrame([data])
