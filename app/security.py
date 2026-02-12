@@ -1,7 +1,7 @@
 from fastapi import Header, HTTPException, status
 import os
 
-
+# Sécurité : vérification de la clé API dans les requêtes entrantes
 def verify_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")):
     api_key = os.getenv("API_KEY")  # lu à chaque requête (robuste)
 

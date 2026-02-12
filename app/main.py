@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Lancement de l'API FastAPI et du dashboard Streamlit en parallèle, avec gestion de l'arrêt propre
 def run_api():
     return subprocess.Popen(
         [
@@ -16,6 +17,8 @@ def run_api():
         cwd=ROOT,
     )
 
+# Lancement du dashboard Streamlit, qui est un client HTTP de l'API (il envoie des requêtes, 
+# il n'a pas besoin de lancer l'API lui-même)
 def run_dashboard():
     return subprocess.Popen(
         [
@@ -25,7 +28,8 @@ def run_dashboard():
         ],
         cwd=ROOT,
     )
-
+# Le dashboard est un client HTTP, il envoie des requêtes à l'API, 
+# mais il n'a pas besoin de lancer l'API lui-même.
 def main():
     api = run_api()
     dashboard = run_dashboard()

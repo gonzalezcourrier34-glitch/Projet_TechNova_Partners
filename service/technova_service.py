@@ -17,6 +17,7 @@ MODEL_REPO = os.getenv("MODEL_REPO", "SteGONZALEZ/technova-model")
 MODEL_FILE = os.getenv("MODEL_FILE", "modele_classification_technova.joblib")
 THRESH_FILE = os.getenv("THRESH_FILE", "threshold.json")
 
+# Note : on pourrait aussi imaginer stocker ces artefacts dans un bucket S3 ou autre, et les télécharger à la volée au démarrage de l'API.
 def _get_artifact_path(artifacts_dir: Path, filename: str) -> str:
     local_path = artifacts_dir / filename
     if local_path.exists():
@@ -27,16 +28,16 @@ def _get_artifact_path(artifacts_dir: Path, filename: str) -> str:
         filename=filename,
         repo_type="model",
     )
-
+# Service encapsulant la logique de chargement du modèle, de préparation des données et de prédiction.
 class TechNovaService:
     def __init__(self) -> None:
         artifacts_dir = Path(__file__).resolve().parents[1] / "artifacts"
 
-        # --- Load model (local or HF) ---
+        # Load model (local or HF)
         model_path = _get_artifact_path(artifacts_dir, MODEL_FILE)
         self.model = joblib.load(model_path)
 
-        # --- Load threshold (local or HF) ---
+        # Load threshold (local or HF)
         thresh_path = _get_artifact_path(artifacts_dir, THRESH_FILE)
         with open(thresh_path, "r", encoding="utf-8") as f:
             self.threshold = float(json.load(f)["threshold"])
@@ -87,6 +88,7 @@ class TechNovaService:
             """
         )
 
+    # Récupère la dernière ligne de features "clean" pour un employee_id donné, ou None si pas trouvé
     def fetch_latest_clean_row(self, db: Session, employee_id: int) -> dict[str, Any] | None:
         row = (
             db.execute(self._sql_clean_latest, {"employee_id": employee_id})
@@ -94,7 +96,8 @@ class TechNovaService:
             .first()
         )
         return dict(row) if row else None
-
+    
+    # Transforme une ligne de features "clean" en DataFrame prête à être ingérée par le modèle, en vérifiant que toutes les features attendues sont présentes
     def _row_to_X(self, row: dict[str, Any]) -> pd.DataFrame:
         missing = [c for c in self.feature_columns if c not in row]
         if missing:
@@ -102,7 +105,8 @@ class TechNovaService:
 
         X = pd.DataFrame([{c: row[c] for c in self.feature_columns}])
         return X[self.feature_columns]
-
+    
+    # Prédit le risque de départ d'un employé à partir de son employee_id, en lisant les features dans clean.ml_features_employees et en appliquant le modèle chargé. Retourne une ModelResponse avec la probabilité et la prédiction binaire (will_leave).
     def predict_from_clean(self, db: Session, employee_id: int) -> ModelResponse:
         row = self.fetch_latest_clean_row(db, employee_id)
         if row is None:
@@ -119,7 +123,8 @@ class TechNovaService:
             turnover_probability=proba,
             will_leave=proba >= self.threshold,
         )
-
+    
+    # Transforme un ModelRequest (payload de features brutes) en DataFrame prête à être ingérée par le modèle, en vérifiant que toutes les features attendues sont présentes et qu'il n'y a pas de features inattendues.
     def adapt_input(self, request: ModelRequest) -> pd.DataFrame:
         data = request.model_dump()
         X = pd.DataFrame([data])
@@ -133,7 +138,8 @@ class TechNovaService:
             raise ValueError(f"Unexpected features: {extra}")
 
         return X[self.feature_columns]
-
+    
+    # Prédit le risque de départ à partir d'un payload de features brutes, en adaptant le payload pour obtenir les features attendues par le modèle, puis en appliquant le modèle. Retourne une ModelResponse avec la probabilité et la prédiction binaire (will_leave).
     def predict_from_payload(self, request: ModelRequest) -> ModelResponse:
         X = self.adapt_input(request)
         proba = float(self.model.predict_proba(X)[0, 1])

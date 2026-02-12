@@ -44,6 +44,7 @@ def health():
     return {"status": "ok"}
 from sqlalchemy import text
 
+# endpoint de readiness pour vérifier que le modèle est chargé et que la DB est accessible
 @app.get("/ready", dependencies=[Depends(verify_api_key)])
 def ready(
     db: Session = Depends(get_db),

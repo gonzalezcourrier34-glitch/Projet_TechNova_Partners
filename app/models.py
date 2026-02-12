@@ -15,22 +15,15 @@ from sqlalchemy import (
 from sqlalchemy import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-
 # Fonction utilitaire pour obtenir l'heure actuelle en UTC, utilisée comme valeur par défaut pour les champs created_at
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
-
 
 # Base de données SQLAlchemy pour les modèles ORM
 class Base(DeclarativeBase):
     pass
 
-
-# ---------------------------------------------------------------------
-# Compat SQLite (tests) / Postgres (prod)
-# SQLite n'auto-incrémente correctement que "INTEGER PRIMARY KEY".
-# On garde BIGINT en Postgres, et on traduit en INTEGER pour SQLite.
-# ---------------------------------------------------------------------
+# Types personnalisés pour les clés primaires et étrangères, avec compatibilité SQLite (qui n'a pas de BigInteger)
 ID_PK = BigInteger().with_variant(Integer, "sqlite")
 ID_FK = BigInteger().with_variant(Integer, "sqlite")
 
