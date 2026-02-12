@@ -217,9 +217,9 @@ def main(
     with engine.begin() as conn:
         if refresh:
             logger.info("Mode --refresh: purge raw tables (snapshots/surveys/ground_truth)")
-            conn.execute(text("TRUNCATE TABLE raw.employee_snapshots RESTART IDENTITY CASCADE"))
-            conn.execute(text("TRUNCATE TABLE raw.surveys RESTART IDENTITY CASCADE"))
-            conn.execute(text("TRUNCATE TABLE raw.ground_truth RESTART IDENTITY CASCADE"))
+            conn.execute(text("TRUNCATE TABLE raw.employee_snapshots RESTART IDENTITY CASCADE;"))
+            conn.execute(text("TRUNCATE TABLE raw.surveys RESTART IDENTITY CASCADE;"))
+            conn.execute(text("TRUNCATE TABLE raw.ground_truth RESTART IDENTITY CASCADE;"))
             # raw.employees: on garde l'upsert
 
         # 1) upsert employees

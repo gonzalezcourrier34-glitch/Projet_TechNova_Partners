@@ -78,16 +78,18 @@ CREATE INDEX IF NOT EXISTS idx_ml_features_target_created_at
   ON clean.ml_features_employees(a_quitte_l_entreprise, created_at);
 """
 
-# Fonction pour exécuter les commandes DDL
-def _exec_ddl(conn, ddl: str) -> None:
-    parts = [p.strip() for p in ddl.split(";") if p.strip()]
-    for stmt in parts:
-        conn.execute(text(stmt))
+# # Fonction pour exécuter les commandes DDL
+# def _exec_ddl(conn, ddl: str) -> None:
+#     parts = [p.strip() for p in ddl.split(";") if p.strip()]
+#     for stmt in parts:
+#         conn.execute(text(stmt))
 
 # Point d'entrée du script
 def main():
     with engine.begin() as conn:
-        _exec_ddl(conn, DDL)
+        conn.exec_driver_sql(DDL)
+    # with engine.begin() as conn:
+    #     _exec_ddl(conn, DDL)
     print("Table clean.ml_features_employees créée / vérifiée (avec employee_id)")
 
 if __name__ == "__main__":

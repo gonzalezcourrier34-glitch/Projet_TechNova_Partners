@@ -138,18 +138,21 @@ CREATE INDEX IF NOT EXISTS ix_predictions_model_version
   ON app.predictions(model_version);
 """
 
-# Fonction utilitaire pour exécuter du DDL de manière robuste
-def _exec_ddl(conn, ddl: str) -> None:
-    # robuste: exécute statement par statement
-    parts = [p.strip() for p in ddl.split(";") if p.strip()]
-    for stmt in parts:
-        conn.execute(text(stmt))
+# # Fonction utilitaire pour exécuter du DDL de manière robuste
+# def _exec_ddl(conn, ddl: str) -> None:
+#     # robuste: exécute statement par statement
+#     parts = [p.strip() for p in ddl.split(";") if p.strip()]
+#     for stmt in parts:
+#         conn.execute(text(stmt))
 
 # Point d'entrée du script
 def main():
     with engine.begin() as conn:
-        _exec_ddl(conn, DDL)
+        conn.exec_driver_sql(DDL)
     print("Schemas + tables créés / vérifiés (raw / clean / app)")
+    # with engine.begin() as conn:
+    #     _exec_ddl(conn, DDL)
+    # print("Schemas + tables créés / vérifiés (raw / clean / app)")
 
 if __name__ == "__main__":
     main()
