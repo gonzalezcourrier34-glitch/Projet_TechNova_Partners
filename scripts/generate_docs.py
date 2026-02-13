@@ -1,26 +1,38 @@
-import os
-import webbrowser
+from pathlib import Path
 
-# les docs à générer sont celles des modules suivants, qui contiennent les fonctions et classes principales de l'app:
-modules = [
-    "app.models",
-    "app.api",
-    "domain.domain",
-    "service.technova_service",
-]
+modules1 = {
+    "app.models": "app_models.md",
+    "app.api": "app_api.md",
+    "domain.domain": "domain.md",
+    "service.technova_service": "technova_service.md"
+}
+modules2 = {
+    "app.database": "database.md"
+}
 
-DOCS_DIR = "docs"
+modules3 = {
+    "app.security": "security.md"
+}
 
-# Crée le dossier docs s'il n'existe pas
-os.makedirs(DOCS_DIR, exist_ok=True)
+docs_dir1 = Path("docs/api_reference")
+docs_dir1.mkdir(parents=True, exist_ok=True)
 
-# Se placer dans docs
-os.chdir(DOCS_DIR)
+for module, filename in modules1.items():
+    content = f"# {module}\n\n::: {module}\n"
+    (docs_dir1 / filename).write_text(content, encoding="utf-8")
 
-# Génération avec pydoc
-for m in modules:
-    os.system(f"python -m pydoc -w {m}")
+docs_dir2 = Path("docs/init_base")
+docs_dir2.mkdir(parents=True, exist_ok=True)
 
-# Ouvre la doc principale
-webbrowser.open("app.models.html")
-webbrowser.open("app.api.html")
+for module, filename in modules2.items():
+    content = f"# {module}\n\n::: {module}\n"
+    (docs_dir2 / filename).write_text(content, encoding="utf-8")
+
+docs_dir3 = Path("docs/securite")
+docs_dir3.mkdir(parents=True, exist_ok=True)
+
+for module, filename in modules3.items():
+    content = f"# {module}\n\n::: {module}\n"
+    (docs_dir3 / filename).write_text(content, encoding="utf-8")
+
+print(" Fichiers MkDocs API générés.")
