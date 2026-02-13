@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Set
+
 
 @dataclass(frozen=True)
 class Feature:
@@ -13,15 +14,14 @@ class Feature:
     max: Optional[float] = None
     choices: Optional[List[str]] = None
 
+
 # DB keys
 DB_ID_KEY = "id"  # id technique BIGSERIAL
 EMPLOYEE_ID_KEY = "employee_external_id"  # id métier stable (SIRH)
 TARGET_KEY = "a_quitte_l_entreprise"
 
-# Liste complète des features utilisées par le modèle, avec leurs types et contraintes,
-# qui seront utilisées à la fois pour la validation des inputs dans le dashboard Streamlit,
-# et pour construire les payloads de prédiction envoyés à l'API FastAPI. 
-# L'ordre des features doit correspondre à celui attendu par le modèle de prédiction.
+
+# Feature registry (MODEL)
 FEATURES: List[Feature] = [
     Feature("note_evaluation_precedente", "Note d’évaluation précédente", "int", min=1, max=5),
     Feature("note_evaluation_actuelle", "Note d’évaluation actuelle", "int", min=1, max=5),
@@ -46,6 +46,8 @@ FEATURES: List[Feature] = [
     Feature("annees_depuis_la_derniere_promotion", "Années depuis la dernière promotion", "int", min=0),
     Feature("annees_sous_responsable_actuel", "Années sous le responsable actuel", "int", min=0),
     Feature("distance_domicile_travail", "Distance domicile–travail (km)", "int", min=0),
+
+    # engineered (calculées avant prediction en mode debug/dashboard)
     Feature("satisfaction_moyenne", "Satisfaction moyenne", "float", min=0, max=5),
     Feature("nonlineaire_participation_pee", "Participation PEE (non linéaire)", "float"),
     Feature("ratio_heures_sup_salaire", "Ratio heures sup / salaire", "float"),
@@ -54,14 +56,46 @@ FEATURES: List[Feature] = [
     Feature("jeune_surcharge", "Jeune avec surcharge (0/1)", "int", min=0, max=1),
     Feature("anciennete_sans_promotion", "Ancienneté sans promotion", "float"),
     Feature("mobilite_carriere", "Mobilité de carrière", "float"),
-    Feature("risque_global", "Risque global agrégé", "float")
+    Feature("risque_global", "Risque global agrégé", "float"),
 ]
 
-# Ordre des features attendu par le modèle
+
+# RAW vs ENGINEERED split
+ENGINEERED_KEYS: Set[str] = {
+    "satisfaction_moyenne",
+    "nonlineaire_participation_pee",
+    "ratio_heures_sup_salaire",
+    "nonlinaire_charge_contrainte",
+    "nonlinaire_surmenage_insatisfaction",
+    "jeune_surcharge",
+    "anciennete_sans_promotion",
+    "mobilite_carriere",
+    "risque_global",
+}
+
+RAW_FEATURES: List[Feature] = [f for f in FEATURES if f.key not in ENGINEERED_KEYS]
+ENGINEERED_FEATURES: List[Feature] = [f for f in FEATURES if f.key in ENGINEERED_KEYS]
+
+RAW_KEYS: List[str] = [f.key for f in RAW_FEATURES]
+
+# Orders / columns
 MODEL_FEATURE_ORDER: List[str] = [f.key for f in FEATURES]
 
-# Colonnes clean utiles en API (sans target)
 DEPLOYMENT_COLUMNS: List[str] = [EMPLOYEE_ID_KEY] + MODEL_FEATURE_ORDER
-
-# Colonnes complètes DB clean
 DB_COLUMNS: List[str] = [DB_ID_KEY, EMPLOYEE_ID_KEY] + MODEL_FEATURE_ORDER + [TARGET_KEY]
+
+
+__all__ = [
+    "Feature",
+    "DB_ID_KEY",
+    "EMPLOYEE_ID_KEY",
+    "TARGET_KEY",
+    "FEATURES",
+    "ENGINEERED_KEYS",
+    "RAW_FEATURES",
+    "ENGINEERED_FEATURES",
+    "RAW_KEYS",
+    "MODEL_FEATURE_ORDER",
+    "DEPLOYMENT_COLUMNS",
+    "DB_COLUMNS",
+]

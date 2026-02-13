@@ -14,7 +14,8 @@ st.set_page_config(page_title="TechNova Dashboard", layout="centered")
 API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000").rstrip("/")
 
 API_PREDICT_BY_ID = f"{API_BASE}/predict/by-id"
-API_PREDICT_DEBUG = f"{API_BASE}/predict/debug"
+# ton API expose /predict/by-features (pas /predict/debug)
+API_PREDICT_DEBUG = f"{API_BASE}/predict/by-features"
 API_LATEST = f"{API_BASE}/predictions/latest"
 API_ROOT = f"{API_BASE}/"
 
@@ -23,7 +24,11 @@ API_ROOT = f"{API_BASE}/"
 API_KEY = os.getenv("API_KEY")
 DEFAULT_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 
-from feature_schema import FEATURES
+# on utilise RAW_FEATURES pour ne pas afficher les engineered
+from feature_schema import RAW_FEATURES
+# calcul des engineered au clic
+from build_features import compute_engineered
+
 
 def safe_request(method: str, url: str, **kwargs):
     try:
@@ -45,9 +50,13 @@ def safe_request(method: str, url: str, **kwargs):
 
 
 def validate_inputs(values: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    """
+    Valide UNIQUEMENT les features RAW (celles visibles dans le formulaire).
+    Les features engineered seront calculées ensuite par compute_engineered().
+    """
     errors: List[str] = []
 
-    for f in FEATURES:
+    for f in RAW_FEATURES:
         v = values.get(f.key)
         if f.required and (v is None or (isinstance(v, str) and v.strip() == "")):
             errors.append(f"{f.label} est requis.")
@@ -137,7 +146,7 @@ with tab_predict:
                     st.write(response.text)
 
     else:
-        st.caption("Mode debug: envoi d’un payload complet de features à l’API.")
+        st.caption("Mode debug: saisie des features RAW, calcul des engineered au clic, puis envoi à l’API.")
 
         col1, col2 = st.columns(2)
         with col1:
@@ -147,7 +156,8 @@ with tab_predict:
 
         values_by_key: Dict[str, Any] = {}
 
-        for idx, f in enumerate(FEATURES):
+        # UI: uniquement les RAW (les engineered ne sont plus affichées)
+        for idx, f in enumerate(RAW_FEATURES):
             label = f.label if not show_keys else f"{f.label} ({f.key})"
 
             if f.dtype == "int":
@@ -198,7 +208,10 @@ with tab_predict:
                     st.write(e)
                 st.stop()
 
-            response = safe_request("POST", API_PREDICT_DEBUG, json=values_by_key)
+            #calcul des features engineered juste avant envoi
+            payload_full = compute_engineered(values_by_key)
+
+            response = safe_request("POST", API_PREDICT_DEBUG, json=payload_full)
             if response is None:
                 st.stop()
             if response.ok:
