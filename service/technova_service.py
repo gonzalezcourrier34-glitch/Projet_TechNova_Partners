@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 service.technova_service
 
@@ -42,6 +40,7 @@ Exemples
 - MODE debug / scoring direct :
     predict_from_payload(request)
 """
+from __future__ import annotations
 
 import json
 import os
@@ -96,7 +95,6 @@ def _get_artifact_path(artifacts_dir: Path, filename: str) -> str:
         filename=filename,
         repo_type="model",
     )
-
 
 # Service encapsulant la logique de chargement du modèle, de préparation des données et de prédiction.
 class TechNovaService:

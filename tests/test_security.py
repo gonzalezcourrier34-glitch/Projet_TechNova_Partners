@@ -1,3 +1,10 @@
+"""
+teste l’endpoint /health avec la sécurité activée.
+
+TEST 1 — Accès REFUSÉ sans clé API
+TEST 2 — Accès AUTORISÉ avec une clé API valide
+
+"""
 import os
 
 # on teste que l'accès à l'endpoint de santé nécessite une clé API valide.

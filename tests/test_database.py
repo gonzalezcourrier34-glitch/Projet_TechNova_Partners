@@ -1,3 +1,12 @@
+"""
+Il y a 2 tests :
+
+Vérifier que si DATABASE_URL n’est pas défini, ton module app.database utilise une URL SQLite par défaut.
+
+Vérifier que get_db() ferme bien la session (appel à close()), même quand on utilise un faux objet.
+
+"""
+
 import importlib
 import sys
 
@@ -8,7 +17,9 @@ def reload_database_module(monkeypatch, database_url: str | None):
         monkeypatch.delenv("DATABASE_URL", raising=False)
     else:
         monkeypatch.setenv("DATABASE_URL", database_url)
-
+    
+    # On supprime le module de sys.modules pour forcer son rechargement, ce qui permet de s'assurer 
+    # que les changements d'environnement sont pris en compte lors de l'importation du module.
     sys.modules.pop("app.database", None)
     import app.database  # noqa: F401
     return importlib.reload(app.database)

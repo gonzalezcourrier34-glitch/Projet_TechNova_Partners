@@ -10,8 +10,14 @@ from app.database import get_db
 from app.models import Base
 from app.security import verify_api_key
 
+#donne une valeur par défaut à la variable d'environnement API_KEY pour les tests,
+#ce qui permet de s'assurer que les tests peuvent s'exécuter même si la variable 
+# d'environnement n'est pas définie dans l'environnement de test.
 os.environ.setdefault("API_KEY", "ci-test-key")
 
+# On définit une URL de base de données pour les tests, en utilisant une base de données SQLite en mémoire,
+# ce qui permet d'avoir une base de données rapide et isolée pour les tests, 
+# sans nécessiter de configuration supplémentaire.
 TEST_DB_URL = "sqlite+pysqlite:///:memory:"
 
 # On définit une fixture pour créer une base de données en mémoire pour les tests, 
@@ -27,7 +33,7 @@ def engine():
         .execution_options(schema_translate_map={"raw": None, "clean": None, "app": None})
     )
     Base.metadata.create_all(eng)
-    yield eng
+    yield eng # On utilise yield pour permettre aux tests d'utiliser la base de données pendant leur exécution
     eng.dispose()
 
 # On définit une fonction pour générer un payload d'exemple, 
@@ -37,7 +43,7 @@ def db(engine):
     SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     session = SessionLocal()
     try:
-        yield session
+        yield session # On utilise yield pour permettre aux tests d'utiliser la session de base de données pendant leur exécution
     finally:
         session.close()
 
