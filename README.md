@@ -203,6 +203,14 @@ CD :
 
 ---
 
+## Documentation
+
+- [Accueil](docs/index.md)
+- [Architecture](docs/architecture.md)
+- [API](docs/api.md)
+- [Base de données](docs/database.md)
+
+
 ## Auteur
 
 Projet réalisé par Stéphane Gonzalez
