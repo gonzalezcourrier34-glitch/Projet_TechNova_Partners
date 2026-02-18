@@ -1,23 +1,25 @@
-name: CI
+name: CI  # Nom du workflow (CI = Intégration Continue)
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
+    branches: ["main"]  # Se déclenche quand on push sur main
+  pull_request:         # Se déclenche aussi à chaque PR (très important)
 
 jobs:
   tests:
-    name: tests_CI
-    runs-on: ubuntu-latest
+    name: tests_CI  # Job principal : lancer les tests + la couverture
+    runs-on: ubuntu-latest  # Machine Linux fournie par GitHub
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # Récupère le code du dépôt dans la machine CI
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+        # Installe la version de Python utilisée par le projet
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -25,23 +27,33 @@ jobs:
           version: "2.0.0"
           virtualenvs-create: true
           virtualenvs-in-project: true
+        # Installe Poetry et crée un .venv local au projet
 
       - name: Install dependencies (with dev)
         run: poetry install --no-interaction --no-ansi --with dev
+        # Installe toutes les dépendances + celles de dev (pytest, coverage…)
 
       - name: Tests + Coverage
         env:
-          API_KEY: "ci-test-key"
+          API_KEY: "ci-test-key"  # Clé fake pour les tests
           DATABASE_URL: "sqlite+pysqlite:////tmp/test.db"
+          # Base SQLite temporaire (rapide et suffisante pour la CI)
         run: |
           poetry run pytest -q \
             --cov=app --cov=service \
             --cov-report=term-missing \
             --cov-report=xml \
             --cov-report=html
+          # - lance les tests
+          # - mesure la couverture sur app/ et service/
+          # - affiche ce qui manque dans le terminal
+          # - génère un rapport XML (CI / outils)
+          # - génère un rapport HTML lisible (htmlcov/)
 
       - name: Upload coverage HTML
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html
           path: htmlcov/
+        # Sauvegarde le rapport HTML comme artefact téléchargeable
+        # (pratique pour le mentor / évaluateur)
