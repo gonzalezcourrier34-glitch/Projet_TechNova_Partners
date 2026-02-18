@@ -65,5 +65,5 @@ jobs:
           context: .  # Le Dockerfile est dans le repo (racine)
           push: true  # Envoie l’image construite dans GHCR
           tags: |
-            ${{ steps.vars.outputs.image_name }}:latest  # Tag pratique (dernier build)
-            ${{ steps.vars.outputs.image_name }}:${{ github.sha }}  # Tag unique (commit exact)
+            ${{ steps.vars.outputs.image_name }}:latest
+            ${{ steps.vars.outputs.image_name }}:${{ github.sha }}
