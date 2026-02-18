@@ -67,34 +67,3 @@ jobs:
           tags: |
             ${{ steps.vars.outputs.image_name }}:latest  # Tag pratique (dernier build)
             ${{ steps.vars.outputs.image_name }}:${{ github.sha }}  # Tag unique (commit exact)
-
-  deploy-huggingface:
-    name: deploy_to_huggingface  # Job 3 : déploiement sur Hugging Face Spaces
-    runs-on: ubuntu-latest
-    needs: build-and-push  # Déploiement seulement si l'image a été push correctement
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Récupère tout l’historique git (utile si HF a besoin de commits)
-
-      - name: Push to Hugging Face Space (force)
-        env:
-          HF_TOKEN: "${{ secrets.HF_TOKEN }}"  # Token HF stocké dans les secrets GitHub
-        run: |
-          set -euo pipefail
-          # -e : stop si erreur, -u : stop si variable manquante, -o pipefail : erreur dans les pipes
-
-          git config --global user.email "ci@github.com"
-          git config --global user.name "github-actions"
-          # Configure git pour que les commits/push aient un auteur "CI"
-
-          # évite l'erreur si le remote existe déjà
-          git remote remove hf 2>/dev/null || true
-          git remote add hf https://huggingface.co/spaces/SteGONZALEZ/technova-api
-          # Ajoute le remote HF (un peu comme "origin" mais pour Hugging Face)
-
-          # push authentifié vers HF (avec token) + force comme tu fais d'habitude
-          git push --force https://SteGONZALEZ:${HF_TOKEN}@huggingface.co/spaces/SteGONZALEZ/technova-api main
-          # Force push : remplace l’état du Space par ce qu’il y a sur main
