@@ -56,4 +56,3 @@ jobs:
           name: coverage-html
           path: htmlcov/
         # Sauvegarde le rapport HTML comme artefact téléchargeable
-        # (pratique pour le mentor / évaluateur)
